@@ -16,6 +16,9 @@
         .active-filter { border-bottom-color: #3b82f6; background: #eff6ff; }
         .custom-footer { font-size: 12px; letter-spacing: -0.025em; line-height: 1; }
         
+        /* Strict Hidden States */
+        #adminPanel, #memberDashboard { display: none; }
+        
         .bank-card {
             background: linear-gradient(135deg, #004a99 0%, #003366 100%);
             position: relative;
@@ -73,7 +76,7 @@
             </div>
         </div>
 
-        <div id="memberDashboard" class="hidden space-y-6">
+        <div id="memberDashboard" class="space-y-6">
             <div class="glass p-6 rounded-2xl shadow-lg flex justify-between items-center">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-800" id="userTitle"></h2>
@@ -152,16 +155,7 @@
         </div>
     </div>
 
-    <div id="verifyModal">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center space-y-4">
-            <i class="fa-solid fa-circle-check text-emerald-500 text-5xl"></i>
-            <h3 class="text-xl font-black uppercase text-slate-800">Verified Member</h3>
-            <div id="verifyResult" class="text-left bg-slate-50 p-4 rounded-xl space-y-2 text-sm text-slate-600"></div>
-            <button onclick="document.getElementById('verifyModal').classList.remove('active')" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold uppercase text-xs">Close</button>
-        </div>
-    </div>
-
-    <div id="adminPanel" class="hidden flex-grow container mx-auto px-4 py-8 max-w-6xl space-y-6">
+    <div id="adminPanel" class="flex-grow container mx-auto px-4 py-8 max-w-6xl space-y-6">
         <div class="flex justify-between items-center border-b pb-4">
             <h2 class="text-2xl font-black text-slate-800 uppercase">ADMIN CONTROL CENTER</h2>
             <div class="flex gap-3">
@@ -233,6 +227,15 @@
         </div>
     </div>
 
+    <div id="verifyModal">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center space-y-4">
+            <i class="fa-solid fa-circle-check text-emerald-500 text-5xl"></i>
+            <h3 class="text-xl font-black uppercase text-slate-800">Verified Member</h3>
+            <div id="verifyResult" class="text-left bg-slate-50 p-4 rounded-xl space-y-2 text-sm text-slate-600"></div>
+            <button onclick="document.getElementById('verifyModal').classList.remove('active')" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold uppercase text-xs">Close</button>
+        </div>
+    </div>
+
     <footer class="p-8 text-center text-slate-400 mt-auto">
         <p onclick="app.checkAdmin()" class="cursor-pointer custom-footer">All right reserved, a product by <strong>Rishedkassimu</strong></p>
     </footer>
@@ -270,6 +273,12 @@
             manualAdjustment: 0,
 
             init() {
+                // Auto-Logout Admin on refresh/close
+                window.addEventListener('beforeunload', () => {
+                    const user = auth.currentUser;
+                    if(user && user.email === "rishedkassimu@gmail.com") signOut(auth);
+                });
+
                 onSnapshot(collection(db, "members"), (snap) => {
                     this.users = snap.docs.map(d => ({ fid: d.id, ...d.data() }));
                     this.updateCounts();
@@ -295,10 +304,27 @@
                     if(list) list.innerHTML = snap.docs.map(d => `<div class="p-2 bg-slate-50 border rounded text-slate-600 italic">"${d.data().msg}"</div>`).join('');
                 });
 
+                // IMPROVED SECURITY AUTH LISTENER
                 onAuthStateChanged(auth, (user) => {
+                    const adminPanel = document.getElementById('adminPanel');
+                    const mainContent = document.getElementById('mainContent');
+                    const memberDashboard = document.getElementById('memberDashboard');
+                    const authSection = document.getElementById('authSection');
+                    
                     if (user && user.email === "rishedkassimu@gmail.com") {
-                        document.getElementById('mainContent').classList.add('hidden');
-                        document.getElementById('adminPanel').classList.remove('hidden');
+                        // Admin is logged in: Hide EVERYTHING user-related
+                        mainContent.style.display = 'none';
+                        adminPanel.style.display = 'block';
+                    } else {
+                        // Admin is NOT logged in or standard user session
+                        adminPanel.style.display = 'none';
+                        mainContent.style.display = 'block';
+                        
+                        // If no member is manually logged in, reset view
+                        if(!this.currentUser) {
+                            memberDashboard.style.display = 'none';
+                            authSection.classList.remove('hidden');
+                        }
                     }
                 });
             },
@@ -311,8 +337,9 @@
             updateCounts() {
                 const active = this.users.filter(u => u.status === 'Active').length;
                 const inactive = this.users.filter(u => u.status === 'Inactive').length;
-                if(document.getElementById('count-all')) {
-                    document.getElementById('count-all').innerText = this.users.length;
+                const cAll = document.getElementById('count-all');
+                if(cAll) {
+                    cAll.innerText = this.users.length;
                     document.getElementById('count-active').innerText = active;
                     document.getElementById('count-inactive').innerText = inactive;
                 }
@@ -321,7 +348,8 @@
             setFilter(val) {
                 this.filter = val;
                 document.querySelectorAll('.summary-card').forEach(c => c.classList.remove('active-filter'));
-                document.getElementById('stat-' + val.toLowerCase()).classList.add('active-filter');
+                const statEl = document.getElementById('stat-' + val.toLowerCase());
+                if(statEl) statEl.classList.add('active-filter');
                 this.renderAdmin();
             },
 
@@ -346,13 +374,13 @@
             },
 
             login() {
-                const u = document.getElementById('l_user').value.trim();
-                const p = document.getElementById('l_pass').value.trim();
-                const found = this.users.find(x => x.user === u && x.pass === p);
+                const uInput = document.getElementById('l_user').value.trim();
+                const pInput = document.getElementById('l_pass').value.trim();
+                const found = this.users.find(x => x.user === uInput && x.pass === pInput);
                 if(found) {
                     this.currentUser = found;
                     document.getElementById('authSection').classList.add('hidden');
-                    document.getElementById('memberDashboard').classList.remove('hidden');
+                    document.getElementById('memberDashboard').style.display = 'block';
                     document.getElementById('userTitle').innerText = found.name;
                     const label = document.getElementById('userStatusLabel');
                     label.innerText = found.status;
