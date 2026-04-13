@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPA M-MKOBA | RishedKassimu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .status-badge { font-size: 0.65rem !important; font-weight: 900; }
+        .payment-status-text { font-size: 0.75rem !important; }
+        .summary-card { border-bottom: 4px solid transparent; cursor: pointer; transition: 0.3s; }
+        .active-filter { border-bottom-color: #3b82f6; background: #eff6ff; }
+        .custom-footer { font-size: 12px; letter-spacing: -0.025em; line-height: 1; }
+        
+        .bank-card {
+            background: linear-gradient(135deg, #004a99 0%, #003366 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .bank-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+        .card-chip {
+            width: 40px;
+            height: 30px;
+            background: linear-gradient(135deg, #ffd700, #b8860b);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        #verifyModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
+        #verifyModal.active { display: flex; }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans min-h-screen flex flex-col text-slate-900">
+
+    <div id="mainContent" class="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+        <div id="authSection" class="max-w-md mx-auto">
+            <div class="glass p-8 rounded-2xl shadow-xl border border-white">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-blue-700">BPA M-MKOBA</h1>
+                    <p class="text-slate-500 mt-2">Professional Membership System</p>
+                </div>
+                <div class="flex border-b mb-6">
+                    <button onclick="showTab('login')" class="flex-1 py-2 font-semibold border-b-2 border-blue-600 text-blue-600" id="tab-login">Login</button>
+                    <button onclick="showTab('signup')" class="flex-1 py-2 font-semibold text-slate-400" id="tab-signup">Register</button>
+                </div>
+                <div id="loginForm" class="tab-content active space-y-4">
+                    <input type="text" id="l_user" placeholder="Username" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="password" id="l_pass" placeholder="Password" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="app.login()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700">Login to Dashboard</button>
+                </div>
+                <div id="signupForm" class="tab-content space-y-4 text-center">
+                    <p class="text-blue-600 font-medium mb-4 uppercase text-sm">New Member Registration</p>
+                    <input type="text" id="s_name" placeholder="Full Name" class="w-full p-3 border rounded-lg outline-none">
+                    <div class="flex">
+                        <span class="inline-flex items-center px-3 bg-slate-200 border border-r-0 rounded-l-lg text-slate-600">255</span>
+                        <input type="tel" id="s_phone" placeholder="7XXXXXXXX" class="flex-1 p-3 border rounded-r-lg outline-none">
+                    </div>
+                    <button onclick="app.register()" class="w-full bg-slate-800 text-white py-3 rounded-lg font-bold">Request Registration</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="memberDashboard" class="hidden space-y-6">
+            <div class="glass p-6 rounded-2xl shadow-lg flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800" id="userTitle"></h2>
+                    <p id="userStatusLabel" class="status-badge uppercase mt-1"></p>
+                </div>
+                <button onclick="location.reload()" class="text-red-500 font-bold px-4 py-2 hover:bg-red-50 rounded-lg">Logout</button>
+            </div>
+
+            <div class="glass p-6 rounded-2xl shadow-md border-t-4 border-emerald-500">
+                <h3 class="font-bold text-xs uppercase text-slate-500 mb-1">Enter here your card number to see your balance</h3>
+                <p class="text-[10px] text-slate-400 mb-3">and other related membership and financial information</p>
+                <div class="flex gap-2">
+                    <input type="text" id="verifyCardNo" placeholder="Enter Card Number" class="flex-1 p-3 border rounded-xl outline-none text-sm">
+                    <button onclick="app.verifyCard()" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase">Check</button>
+                </div>
+            </div>
+
+            <div class="bg-white border-l-4 border-blue-600 p-6 rounded-xl shadow-sm italic text-slate-700 text-sm">
+                <p>Hon. Onesmo, in collaboration with the M-MKOBA Committee, warmly welcomes you to the BPA M-MKOBA community. Kindly be reminded to pay your membership fee twice per semester to maintain active membership status. You are kindly advised to regularly visit your account to stay updated with the latest information and notifications</p>
+            </div>
+
+            <div class="bg-blue-600 text-white p-6 rounded-2xl shadow-md">
+                <h3 class="font-bold mb-2 flex items-center text-sm"><i class="fa-solid fa-bullhorn mr-2"></i> Official Update</h3>
+                <p id="announcementText" class="text-blue-50 text-sm">Loading latest updates...</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="glass p-6 rounded-2xl shadow-md">
+                    <h3 class="font-bold border-b pb-2 mb-4">Membership Info</h3>
+                    <div id="profileDetails" class="space-y-3 text-slate-600"></div>
+                    <div id="paymentArea" class="mt-4 border-t pt-3">
+                        <p id="paymentFeedback" class="font-bold italic payment-status-text"></p>
+                        <div id="howToJoin" class="hidden mt-4 p-4 bg-slate-50 border rounded-lg text-slate-700">
+                            <p class="font-black text-blue-700 mb-2 uppercase text-xs">JINSI YA KUJIUNGA NA KUFANYA MALIPO</p>
+                            <div class="text-[11px] space-y-1">
+                                <p class="font-bold">Kwa watumiaji wa Vodacom:</p>
+                                <ol class="list-decimal ml-5">
+                                    <li>Piga *150*00#</li>
+                                    <li>Chagua namba 6 (Huduma za kifedha)</li>
+                                    <li>Chagua namba 3 kisha BPA 2 FAMILY</li>
+                                    <li>Ingiza namba ya kikundi 2024097</li>
+                                </ol>
+                                <p class="mt-2 font-bold italic">Kwa mitandao mingine, wasiliana na:</p>
+                                <p class="font-bold text-blue-600">+255 769 408 462</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="glass p-6 rounded-2xl shadow-md flex justify-center items-center">
+                        <div class="w-80 h-52 bank-card rounded-2xl p-6 text-white shadow-2xl relative">
+                            <div class="flex justify-between items-start">
+                                <p class="text-[10px] uppercase opacity-70 tracking-widest">MKOBA CARD</p>
+                                <i class="fa-solid fa-wifi rotate-90 opacity-50"></i>
+                            </div>
+                            <div class="card-chip mt-4"></div>
+                            <p class="mt-2 font-bold text-xl uppercase tracking-tight" id="cardName"></p>
+                            <p class="text-md opacity-90 font-mono" id="cardNo"></p>
+                            <div class="mt-4 flex justify-between items-end">
+                                <span class="text-[10px] font-mono" id="cardId"></span>
+                                <i class="fa-solid fa-id-card-clip text-4xl opacity-20"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass p-6 rounded-2xl shadow-md">
+                        <h3 class="font-bold border-b pb-2 mb-4 text-[10px] uppercase leading-tight text-slate-500">
+                            send feedback to M-MKOBA committee non of your personal information is taken, your privacy matters
+                        </h3>
+                        <textarea id="userFeedback" class="w-full p-3 border rounded-xl h-24 text-sm outline-none" placeholder="Write to the committee..."></textarea>
+                        <button onclick="app.sendFeedback()" class="w-full mt-2 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold uppercase">Send Feedback</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="verifyModal">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center space-y-4">
+            <i class="fa-solid fa-circle-check text-emerald-500 text-5xl"></i>
+            <h3 class="text-xl font-black uppercase text-slate-800">Verified Member</h3>
+            <div id="verifyResult" class="text-left bg-slate-50 p-4 rounded-xl space-y-2 text-sm text-slate-600"></div>
+            <button onclick="document.getElementById('verifyModal').classList.remove('active')" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold uppercase text-xs">Close</button>
+        </div>
+    </div>
+
+    <div id="adminPanel" class="hidden flex-grow container mx-auto px-4 py-8 max-w-6xl space-y-6">
+        <div class="flex justify-between items-center border-b pb-4">
+            <h2 class="text-2xl font-black text-slate-800 uppercase">ADMIN CONTROL CENTER</h2>
+            <div class="flex gap-3">
+                <input type="text" id="adminSearch" oninput="app.renderAdmin()" placeholder="Search members..." class="p-2 border rounded-xl text-sm w-64 outline-none">
+                <button onclick="app.adminLogout()" class="bg-slate-800 text-white px-6 py-2 rounded-xl text-xs font-bold">LOGOUT</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="glass p-5 rounded-2xl shadow-md border-l-4 border-blue-600">
+                <h3 class="font-bold mb-2 text-xs uppercase text-slate-600">Manage Group Funds (TSH)</h3>
+                <div class="flex flex-col gap-2">
+                    <p class="text-lg font-black text-blue-700" id="liveTotalFundDisplay">Calculated: 0/=</p>
+                    <div class="flex gap-2">
+                        <input type="number" id="adjAmount" class="flex-1 p-2 border rounded-lg text-sm" placeholder="Amount">
+                        <button onclick="app.adjustFund('add')" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-[10px] font-bold uppercase"><i class="fa-solid fa-plus"></i> Grant</button>
+                        <button onclick="app.adjustFund('sub')" class="bg-rose-600 text-white px-3 py-2 rounded-lg text-[10px] font-bold uppercase"><i class="fa-solid fa-minus"></i> Spend</button>
+                    </div>
+                </div>
+            </div>
+            <div class="glass p-5 rounded-2xl shadow-md border-l-4 border-rose-600">
+                <h3 class="font-bold mb-2 text-xs uppercase text-slate-600">Batch Management</h3>
+                <div class="flex gap-2">
+                    <button onclick="app.expireFee('fee1')" class="flex-1 bg-rose-100 text-rose-700 p-2 rounded-lg text-[10px] font-bold uppercase">End Fee 1</button>
+                    <button onclick="app.expireFee('fee2')" class="flex-1 bg-rose-600 text-white p-2 rounded-lg text-[10px] font-bold uppercase">End Fee 2</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6">
+            <div onclick="app.setFilter('all')" class="summary-card glass p-6 rounded-2xl shadow-sm text-center active-filter" id="stat-all">
+                <p class="text-slate-500 text-xs font-bold uppercase mb-1">Total Members</p>
+                <h4 id="count-all" class="text-3xl font-black">0</h4>
+            </div>
+            <div onclick="app.setFilter('Active')" class="summary-card glass p-6 rounded-2xl shadow-sm text-center" id="stat-active">
+                <p class="text-emerald-600 text-xs font-bold uppercase mb-1">Active</p>
+                <h4 id="count-active" class="text-3xl font-black text-emerald-700">0</h4>
+            </div>
+            <div onclick="app.setFilter('Inactive')" class="summary-card glass p-6 rounded-2xl shadow-sm text-center" id="stat-inactive">
+                <p class="text-rose-500 text-xs font-bold uppercase mb-1">Inactive</p>
+                <h4 id="count-inactive" class="text-3xl font-black text-rose-700">0</h4>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-4 gap-6">
+            <div class="md:col-span-3 glass rounded-2xl shadow-xl overflow-hidden border border-white h-fit">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-400 uppercase text-[10px] font-black border-b">
+                        <tr>
+                            <th class="p-4">Member Details</th>
+                            <th class="p-4 text-center">Status Control</th>
+                            <th class="p-4 text-center">Management</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminMemberTable"></tbody>
+                </table>
+            </div>
+            <div class="space-y-4">
+                <div class="glass p-5 rounded-2xl shadow-md border-t-4 border-blue-600">
+                    <h3 class="font-bold mb-2 text-xs uppercase">Broadcast Update</h3>
+                    <textarea id="adminNote" class="w-full p-3 border rounded-xl h-24 text-sm outline-none" placeholder="Type update..."></textarea>
+                    <button onclick="app.postUpdate()" class="w-full mt-3 bg-blue-700 text-white py-3 rounded-xl text-xs font-bold uppercase">Post Update</button>
+                </div>
+                <div id="adminFeedbackArea" class="glass p-5 rounded-2xl shadow-md h-64 overflow-y-auto">
+                    <h3 class="font-bold mb-2 text-xs uppercase">Anonymous Feedback</h3>
+                    <div id="feedbackList" class="space-y-3 text-[10px]"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="p-8 text-center text-slate-400 mt-auto">
+        <p onclick="app.checkAdmin()" class="cursor-pointer custom-footer">All right reserved, a product by <strong>Rishedkassimu</strong></p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPLu5mcsl4SIHdhw9tUgXrvnNw_p4-WNw",
+            authDomain: "bpa-m-koba.firebaseapp.com",
+            projectId: "bpa-m-koba",
+            storageBucket: "bpa-m-koba.firebasestorage.app",
+            messagingSenderId: "138518712624",
+            appId: "1:138518712624:web:ae7a600e4680f55708b8f5"
+        };
+
+        const fApp = initializeApp(firebaseConfig);
+        const db = getFirestore(fApp);
+        const auth = getAuth(fApp);
+
+        window.showTab = (type) => {
+            document.getElementById('loginForm').classList.toggle('active', type === 'login');
+            document.getElementById('signupForm').classList.toggle('active', type === 'signup');
+            document.getElementById('tab-login').className = type === 'login' ? 'flex-1 py-2 font-semibold border-b-2 border-blue-600 text-blue-600' : 'flex-1 py-2 font-semibold text-slate-400';
+            document.getElementById('tab-signup').className = type === 'signup' ? 'flex-1 py-2 font-semibold border-b-2 border-blue-600 text-blue-600' : 'flex-1 py-2 font-semibold text-slate-400';
+        };
+
+        window.app = {
+            users: [],
+            sentList: new Set(),
+            filter: 'all',
+            currentUser: null,
+            manualAdjustment: 0,
+
+            init() {
+                onSnapshot(collection(db, "members"), (snap) => {
+                    this.users = snap.docs.map(d => ({ fid: d.id, ...d.data() }));
+                    this.updateCounts();
+                    this.renderAdmin();
+                });
+                
+                onSnapshot(doc(db, "settings", "whatsapp_tracking"), (snap) => {
+                    if(snap.exists()) this.sentList = new Set(snap.data().sentIds || []);
+                    this.renderAdmin();
+                });
+
+                onSnapshot(doc(db, "settings", "finance"), (snap) => {
+                    this.manualAdjustment = snap.exists() ? (snap.data().adjustment || 0) : 0;
+                    this.renderAdmin();
+                });
+
+                onSnapshot(doc(db, "settings", "announcement"), (snap) => {
+                    document.getElementById('announcementText').innerText = snap.exists() ? snap.data().text : "No updates.";
+                });
+
+                onSnapshot(collection(db, "feedback"), (snap) => {
+                    const list = document.getElementById('feedbackList');
+                    if(list) list.innerHTML = snap.docs.map(d => `<div class="p-2 bg-slate-50 border rounded text-slate-600 italic">"${d.data().msg}"</div>`).join('');
+                });
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user && user.email === "rishedkassimu@gmail.com") {
+                        document.getElementById('mainContent').classList.add('hidden');
+                        document.getElementById('adminPanel').classList.remove('hidden');
+                    }
+                });
+            },
+
+            calculateTotalFund() {
+                const auto = this.users.reduce((acc, u) => acc + (u.balance || 0), 0);
+                return auto + this.manualAdjustment;
+            },
+
+            updateCounts() {
+                const active = this.users.filter(u => u.status === 'Active').length;
+                const inactive = this.users.filter(u => u.status === 'Inactive').length;
+                if(document.getElementById('count-all')) {
+                    document.getElementById('count-all').innerText = this.users.length;
+                    document.getElementById('count-active').innerText = active;
+                    document.getElementById('count-inactive').innerText = inactive;
+                }
+            },
+
+            setFilter(val) {
+                this.filter = val;
+                document.querySelectorAll('.summary-card').forEach(c => c.classList.remove('active-filter'));
+                document.getElementById('stat-' + val.toLowerCase()).classList.add('active-filter');
+                this.renderAdmin();
+            },
+
+            async register() {
+                const name = document.getElementById('s_name').value.trim();
+                const phInput = document.getElementById('s_phone').value.trim();
+                if(!name || !phInput) return alert("Fill Fields");
+                const fullPhone = "255" + phInput;
+                if(this.users.find(u => u.phone === fullPhone)) return alert("Error: Already registered.");
+
+                const orderNum = (this.users.length + 1).toString().padStart(2, '0');
+                const uCode = (18001 + this.users.length).toString();
+                const pCode = "@" + name.split(' ')[0].toLowerCase() + uCode.slice(-2);
+                
+                await addDoc(collection(db, "members"), {
+                    name, phone: fullPhone, user: uCode, pass: pCode,
+                    status: "Inactive", joined: new Date().toLocaleDateString(),
+                    order: orderNum, balance: 0, fee1: false, fee2: false
+                });
+                alert("congratulation! you will shortly receive whatsapp message containing your username and password");
+                showTab('login');
+            },
+
+            login() {
+                const u = document.getElementById('l_user').value.trim();
+                const p = document.getElementById('l_pass').value.trim();
+                const found = this.users.find(x => x.user === u && x.pass === p);
+                if(found) {
+                    this.currentUser = found;
+                    document.getElementById('authSection').classList.add('hidden');
+                    document.getElementById('memberDashboard').classList.remove('hidden');
+                    document.getElementById('userTitle').innerText = found.name;
+                    const label = document.getElementById('userStatusLabel');
+                    label.innerText = found.status;
+                    label.className = found.status === 'Active' ? 'text-emerald-600 status-badge uppercase mt-1' : 'text-rose-600 status-badge uppercase mt-1';
+                    
+                    document.getElementById('profileDetails').innerHTML = `<p><strong>Member ID:</strong> ${found.user}</p><p><strong>Phone:</strong> +${found.phone}</p>`;
+                    document.getElementById('cardName').innerText = found.name;
+                    const cleanPhone = found.phone.replace('255', '');
+                    const formattedCardNo = ("16" + (found.order || "00") + cleanPhone).match(/.{1,3}/g).join(' ');
+                    document.getElementById('cardId').innerText = "ID: " + found.user;
+                    document.getElementById('cardNo').innerText = formattedCardNo;
+                    
+                    const fb = document.getElementById('paymentFeedback');
+                    if(found.status === 'Active') {
+                        fb.innerText = "you have successfully paid membership fee";
+                        fb.className = "text-emerald-600 font-bold italic payment-status-text";
+                        document.getElementById('howToJoin').classList.add('hidden');
+                    } else {
+                        fb.innerText = "please pay membership fee to activate your membership";
+                        fb.className = "text-rose-600 font-bold italic payment-status-text";
+                        document.getElementById('howToJoin').classList.remove('hidden');
+                    }
+                } else { alert("Login failed"); }
+            },
+
+            verifyCard() {
+                const input = document.getElementById('verifyCardNo').value.trim().replace(/\s/g, '');
+                const found = this.users.find(u => {
+                    const cp = u.phone.replace('255', '');
+                    return ("16" + (u.order || "00") + cp) === input;
+                });
+                if(found) {
+                    const totalFund = this.calculateTotalFund();
+                    document.getElementById('verifyResult').innerHTML = `
+                        <p><strong>Full Name:</strong> ${found.name}</p>
+                        <p><strong>ID Number:</strong> ${found.user}</p>
+                        <p><strong>Fee 1:</strong> ${found.fee1 ? 'PAID' : 'NOT PAID'}</p>
+                        <p><strong>Fee 2:</strong> ${found.fee2 ? 'PAID' : 'NOT PAID'}</p>
+                        <p class="text-emerald-600 font-black"><strong>Personal Balance:</strong> ${found.balance || 0}/= TSH</p>
+                        <hr class="my-2">
+                        <p class="text-blue-700 font-black"><strong>Consolidated Fund:</strong> ${totalFund}/= TSH</p>
+                        <p><strong>Status:</strong> <span class="${found.status === 'Active' ? 'text-emerald-600' : 'text-rose-600'} font-bold">${found.status}</span></p>
+                    `;
+                    document.getElementById('verifyModal').classList.add('active');
+                } else { alert("Invalid Card Number"); }
+            },
+
+            async adjustFund(type) {
+                const amount = parseInt(document.getElementById('adjAmount').value);
+                if(!amount || amount <= 0) return alert("Enter valid amount");
+                
+                const newAdjustment = type === 'add' ? this.manualAdjustment + amount : this.manualAdjustment - amount;
+                await setDoc(doc(db, "settings", "finance"), { adjustment: newAdjustment });
+                document.getElementById('adjAmount').value = "";
+                alert("Group Balance Adjusted.");
+            },
+
+            async expireFee(feeKey) {
+                if(!confirm(`Warning: This will set members who paid ${feeKey} to Inactive. Payment history will remain. Continue?`)) return;
+                const paidOnes = this.users.filter(u => u[feeKey] === true);
+                for (let u of paidOnes) {
+                    await updateDoc(doc(db, "members", u.fid), { 
+                        status: 'Inactive' 
+                    });
+                }
+                alert(`Period Ended. Status updated for ${paidOnes.length} members.`);
+            },
+
+            async sendFeedback() {
+                const msg = document.getElementById('userFeedback').value.trim();
+                if(msg) {
+                    await addDoc(collection(db, "feedback"), { msg });
+                    alert("Feedback sent anonymously!");
+                    document.getElementById('userFeedback').value = "";
+                }
+            },
+
+            renderAdmin() {
+                const table = document.getElementById('adminMemberTable');
+                if(!table) return;
+                const term = document.getElementById('adminSearch').value.toLowerCase();
+                let filtered = this.users.filter(u => u.name.toLowerCase().includes(term));
+                if(this.filter !== 'all') filtered = filtered.filter(u => u.status === this.filter);
+
+                const currentFund = this.calculateTotalFund();
+                const display = document.getElementById('liveTotalFundDisplay');
+                if(display) display.innerText = "Total Group Fund: " + currentFund + "/= TSH";
+
+                table.innerHTML = filtered.map(u => {
+                    const isSent = this.sentList.has(u.fid);
+                    return `
+                    <tr class="border-b hover:bg-slate-50 transition">
+                        <td class="p-4">
+                            <span class="font-bold text-slate-800">${u.name}</span><br>
+                            <span class="text-[10px] text-slate-400 font-mono">ID: ${u.user} | Pass: ${u.pass}</span>
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="status-badge px-3 py-1 rounded border ${u.status === 'Active' ? 'text-emerald-700 bg-emerald-50 border-emerald-100' : 'text-rose-700 bg-rose-50 border-rose-100'}">
+                                    ${u.status}
+                                </span>
+                                <button onclick="app.toggle('${u.fid}', '${u.status}')" class="text-[8px] font-black text-blue-600 uppercase hover:underline">Toggle Payment</button>
+                            </div>
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex gap-2 justify-center">
+                                <button onclick="app.wa('${u.fid}', '${u.phone}', '${u.name}', '${u.user}', '${u.pass}', '${u.status}')" class="${isSent ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-700'} px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200">
+                                    ${isSent ? 'SENT' : 'WHATSAPP'}
+                                </button>
+                                <button onclick="app.deleteMember('${u.fid}')" class="text-rose-400 hover:text-rose-600 p-2"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('');
+            },
+
+            async toggle(fid, s) {
+                const newStatus = s === 'Active' ? 'Inactive' : 'Active';
+                let bal = 0;
+                let feeUpdate = {};
+                
+                if(newStatus === 'Active') {
+                    const choice = prompt("Enter Payment Period:\n1 = Fee 1 (5000)\n2 = Fee 2 (5000)\n3 = Full Semester (10000)");
+                    if(choice === "1") { bal = 5000; feeUpdate = { fee1: true }; }
+                    else if(choice === "2") { bal = 5000; feeUpdate = { fee2: true }; }
+                    else if(choice === "3") { bal = 10000; feeUpdate = { fee1: true, fee2: true }; }
+                    else return alert("Invalid entry.");
+                } else {
+                    feeUpdate = { fee1: false, fee2: false };
+                }
+                await updateDoc(doc(db, "members", fid), { status: newStatus, balance: bal, ...feeUpdate });
+            },
+
+            async wa(fid, phone, name, user, pass, status) {
+                const msg = `*BPA M-MKOBA*%0AHi ${name}, Status: ${status}%0AUser: ${user}%0APass: ${pass}`;
+                window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                this.sentList.add(fid);
+                await setDoc(doc(db, "settings", "whatsapp_tracking"), { sentIds: Array.from(this.sentList) });
+                this.renderAdmin();
+            },
+
+            async checkAdmin() {
+                const email = prompt("Email:");
+                if(email === "rishedkassimu@gmail.com") {
+                    const pass = prompt("Password:");
+                    await signInWithEmailAndPassword(auth, email, pass).catch(() => alert("Denied"));
+                }
+            },
+
+            async adminLogout() { await signOut(auth); location.reload(); },
+            async deleteMember(fid) { if(confirm("Permanently remove this member?")) await deleteDoc(doc(db, "members", fid)); },
+            async postUpdate() {
+                const text = document.getElementById('adminNote').value;
+                if(text) await setDoc(doc(db, "settings", "announcement"), { text });
+            }
+        };
+
+        app.init();
+    </script>
+</body>
+</html>
